@@ -1,11 +1,13 @@
 from typing import Dict, List, Union, Tuple, TypeAlias
 
 
-Executable: TypeAlias = Union[str, List[str]]
+Program: TypeAlias = Union[str, List[str]]
 
 Arg: TypeAlias = Union[str, int, float]
 
 ArgsDict: TypeAlias = Dict[str, Arg]
+
+EnvDict: TypeAlias = Dict[str, str]
 
 ArgsMatrix: TypeAlias = Dict[str, Union[Arg, List[Arg]]]
 

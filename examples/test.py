@@ -3,26 +3,30 @@ import fire
 
 
 def main():
-    sweep = (
-        Sweep(executable=["python", "test.py"])
+    (
+        Sweep(program=["python", "test.py"])
         .args(
             {
                 "seed": 137,
                 "batch_size": 8,
-                "dataset": ["rng", "gsm8k", "math"],
+                "dataset": ["gsm8k", "math"],
+            }
+        )
+        .args(
+            {
+                "seed": 137,
+                "dataset": ["rng"],
+                "evaluator": ["rng", "srng"],
             }
         )
         .include(
             [
                 ({"dataset": ["gsm8k", "math"]}, {"evaluator": "math"}),
                 ({"dataset": "math"}, {"batch_size": 4}),
+                ({"dataset": "rng"}, {"batch_size": 16}),
             ]
         )
-        .exclude({"batch_size": 4})
-    )
-
-    for config in sweep:
-        print(config)
+    ).write_bash()
 
 
 if __name__ == "__main__":
