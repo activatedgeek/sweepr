@@ -1,5 +1,7 @@
 # Sweepr
 
+[![Python Lint](https://github.com/activatedgeek/sweepr/actions/workflows/lint.yml/badge.svg)](https://github.com/activatedgeek/sweepr/actions/workflows/lint.yml)
+
 ## Install
 
 We use [`uv`](https://docs.astral.sh/uv/) to manage dependencies.
