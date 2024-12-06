@@ -26,6 +26,9 @@ dependencies = [
 dev = [
     "ruff",
 ]
+wandb = [
+    "wandb",
+]
 
 [tool.setuptools]
 include-package-data = false

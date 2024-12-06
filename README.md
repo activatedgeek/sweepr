@@ -4,8 +4,14 @@
 
 ## Install
 
+To install PyPI package run,
 ```shell
 pip install sweepr
+```
+
+To use `wandb` provider, run:
+```shell
+pip install sweepr[wandb]
 ```
 
 ## Development
@@ -14,13 +20,13 @@ We use [`uv`](https://docs.astral.sh/uv/) to manage dependencies.
 
 Install dependencies as:
 ```shell
-uv sync --refresh --no-install-project --extra dev
+uv sync --refresh --no-install-project --extra dev --extra wandb
 ```
 
 Then install `sweepr` using
 
 ```shell
-uv pip install -e .[dev]
+uv pip install -e .[dev,wandb]
 ```
 
 ## License

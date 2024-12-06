@@ -1,5 +1,10 @@
-from sweepr import Sweep, Slurm, Pueue, Python
 import fire
+
+from sweepr import Sweep, StatelessProvider  # noqa: F401
+from sweepr.providers.wandb import WandBProvider
+from sweepr.executors.python import PythonExecutor
+from sweepr.executors.pueue import PueueExecutor
+from sweepr.executors.slurm import SlurmExecutor
 
 
 def main(out=None):
@@ -36,9 +41,14 @@ def main(out=None):
             ]
         )
         .exclude([])
-        .executor(Python(file="test.py"))
-        .executor(Pueue(file="test.py", gpus=1))
-        .executor(Slurm(file="test.py", account="sk", timelimit=12, gpus="a100:1"))
+        # .provider(StatelessProvider())
+        .provider(WandBProvider())
+        ## Last one takes effect.
+        .executor(PythonExecutor(file="test.py"))
+        .executor(PueueExecutor(file="test.py", gpus=1))
+        .executor(
+            SlurmExecutor(file="test.py", account="sk", timelimit=12, gpus="a100:1")
+        )
     )
 
     sweep.write_bash(file=out)

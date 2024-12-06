@@ -1,4 +1,4 @@
-from typing import Dict, List, Union, Tuple, TypeAlias
+from typing import Dict, Iterable, Union, Tuple, TypeAlias
 
 
 Arg: TypeAlias = Union[str, int, float]
@@ -7,10 +7,10 @@ ArgsDict: TypeAlias = Dict[str, Arg]
 
 EnvDict: TypeAlias = Dict[str, str]
 
-ArgsMatrix: TypeAlias = Dict[str, Union[Arg, List[Arg]]]
+ArgsMatrix: TypeAlias = Dict[str, Union[Arg, Iterable[Arg]]]
 
 IncludeTuple: TypeAlias = Tuple[ArgsMatrix, ArgsDict]
 
-Includes: TypeAlias = Union[IncludeTuple, List[IncludeTuple]]
+Includes: TypeAlias = Union[IncludeTuple, Iterable[IncludeTuple]]
 
-Excludes: TypeAlias = Union[ArgsMatrix, List[ArgsMatrix]]
+Excludes: TypeAlias = Union[ArgsMatrix, Iterable[ArgsMatrix]]
