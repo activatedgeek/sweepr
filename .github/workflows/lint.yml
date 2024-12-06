@@ -2,11 +2,11 @@ name: Lint
 
 on:
   push:
+    branches:
+      - '*'
     paths:
       - .github/workflows/lint.yml
       - '**.py'
-    tags-ignore:
-      - '**'
 
 jobs:
   run-lint:
@@ -15,17 +15,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.11
-          cache: pip
-
-      - name: Install Ruff
-        run: pip install ruff
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v4
 
       - name: Run Ruff
-        run: ruff check --output-format=github .
+        run: uvx ruff check --output-format=github .
 
       - name: Discord Notify
         uses: sarisia/actions-status-discord@v1
