@@ -1,10 +1,10 @@
-from sweepr import Sweep
+from sweepr import Sweep, Slurm, Pueue, Python
 import fire
 
 
 def main(out=None):
-    (
-        Sweep(program=["python", "test.py"])
+    sweep = (
+        Sweep()
         .args(
             {
                 "seed": 137,
@@ -35,8 +35,13 @@ def main(out=None):
                 ({"dataset": "rng"}, {"batch_size": 16}),
             ]
         )
-        .slurm({"account": "sk", "timelimit": 12, "gpus": "a100:1"})
-    ).write_bash(file=out)
+        .exclude([])
+        .executor(Python(file="test.py"))
+        .executor(Pueue(file="test.py", gpus=1))
+        .executor(Slurm(file="test.py", account="sk", timelimit=12, gpus="a100:1"))
+    )
+
+    sweep.write_bash(file=out)
 
 
 if __name__ == "__main__":

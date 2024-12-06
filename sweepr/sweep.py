@@ -1,5 +1,6 @@
 from typing import Iterator, Optional, List, Union, TextIO
 import sys
+from enum import Enum
 from contextlib import nullcontext
 from tqdm.auto import tqdm
 from pathlib import Path
@@ -11,18 +12,15 @@ from functools import reduce
 from operator import iand, ior
 
 from .types import (
-    Program,
     Arg,
     ArgsDict,
     EnvDict,
-    PueueConfigDict,
-    SlurmConfigDict,
     ArgsMatrix,
     Includes,
     Excludes,
 )
 from .utils import iter_dict
-from .env import RunEnv, PueueEnv, SlurmEnv
+from .executors import BaseExecutor
 
 
 @dataclass
@@ -32,11 +30,15 @@ class Run:
     env: Optional[EnvDict] = field(default_factory=lambda: {})
     tags: List[str] = field(default_factory=lambda: [])
 
+    class Env(str, Enum):
+        HASH = "RUN_HASH"
+        TAGS = "RUN_TAGS"
+
     @property
     def argv(self):
         return (
-            [f"{RunEnv.HASH.value}={self.hash}"]
-            + ([f"{RunEnv.TAGS.value}={','.join(self.tags)}"] if self.tags else [])
+            [f"{self.Env.HASH.value}={self.hash}"]
+            + ([f"{self.Env.TAGS.value}={','.join(self.tags)}"] if self.tags else [])
             + [f"{k}={v}" for k, v in self.env.items()]
             + self.program
             + [f"--{k}={v}" for k, v in self.args.items()]
@@ -64,22 +66,17 @@ class Run:
 
 
 class Sweep:
-    def __init__(self, program: Program):
-        if isinstance(program, str):
-            program = program.split(" ")
+    def __init__(self):
+        self._executor: BaseExecutor = None
 
-        self._program = program
-
-        self._df: pl.DataFrame = None
-
-        self._common_env = {}
+        self._args: pl.DataFrame = None
 
     def __len__(self):
-        return len(self._df)
+        return len(self._args)
 
     @property
     def tags(self):
-        assert self._df is not None, "Did you set .args(...) first?"
+        assert self._args is not None, "Did you set .args(...) first?"
 
         return list(
             filter(
@@ -87,8 +84,8 @@ class Sweep:
                 [
                     f"arg:{k}"
                     for k, v in next(
-                        self._df.select(
-                            [pl.col(c).n_unique() for c in self._df.columns]
+                        self._args.select(
+                            [pl.col(c).n_unique() for c in self._args.columns]
                         ).iter_rows(named=True)
                     ).items()
                     if v > 1
@@ -97,15 +94,16 @@ class Sweep:
         )
 
     def __iter__(self) -> Iterator[Run]:
-        assert self._df is not None, "Did you set .args(...) first?"
+        assert self._args is not None, "Did you run .args(...)?"
+        assert self._executor is not None, "Did you run .executor(...)?"
 
         run_tags = self.tags
 
-        for row in self._df.iter_rows(named=True):
+        for row in self._args.iter_rows(named=True):
             run = Run(
-                program=self._program,
+                program=self._executor.exec,
                 args={k: v for k, v in row.items() if v is not None},
-                env=self._common_env,
+                env=self._executor.env,
                 tags=run_tags,
             )
 
@@ -116,20 +114,20 @@ class Sweep:
 
         new_df = pl.DataFrame(all_args)
 
-        if self._df is None:
-            self._df = new_df
+        if self._args is None:
+            self._args = new_df
         else:
             self._check_cols_exist(new_df.columns, add_missing=True)
-            self._check_cols_exist(self._df.columns, add_missing=True, df=new_df)
+            self._check_cols_exist(self._args.columns, add_missing=True, df=new_df)
 
-            self._df = pl.concat([self._df, new_df], how="align", rechunk=True)
+            self._args = pl.concat([self._args, new_df], how="align", rechunk=True)
 
-        self._df = self._df.unique()
+        self._args = self._args.unique()
 
         return self
 
     def include(self, includes: Includes):
-        assert self._df is not None, "Did you set .args(...) first?"
+        assert self._args is not None, "Did you set .args(...) first?"
 
         if not isinstance(includes, list):
             includes = [includes]
@@ -139,19 +137,19 @@ class Sweep:
 
             self._check_cols_exist(include_dict.keys(), add_missing=True)
 
-            self._df = self._df.with_columns(
+            self._args = self._args.with_columns(
                 pl.when(self._prepare_match_conditions(match_dict))
                 .then(pl.struct(**{k: pl.lit(v) for k, v in include_dict.items()}))
                 .otherwise(pl.struct(*include_dict.keys()))
                 .struct.unnest()
             )
 
-        self._df = self._df.unique()
+        self._args = self._args.unique()
 
         return self
 
     def exclude(self, excludes: Excludes):
-        assert self._df is not None, "Did you set .args(...) first?"
+        assert self._args is not None, "Did you set .args(...) first?"
 
         if not isinstance(excludes, list):
             excludes = [excludes]
@@ -159,29 +157,12 @@ class Sweep:
         for match_dict in tqdm(excludes, leave=False):
             self._check_cols_exist(match_dict.keys())
 
-            self._df = self._df.filter(~self._prepare_match_conditions(match_dict))
+            self._args = self._args.filter(~self._prepare_match_conditions(match_dict))
 
         return self
 
-    def pueue(self, config: PueueConfigDict, executable: str = "puv"):
-        if config.get("gpus", None):
-            self._common_env[PueueEnv.GPUS.value] = config.get("gpus")
-
-        self._program = [executable] + self._program
-
-        return self
-
-    def slurm(self, config: SlurmConfigDict, executable: str = "sdocker"):
-        if config.get("timelimit", None):
-            self._common_env[SlurmEnv.TIMELIMIT.value] = config.get("timelimit")
-
-        if config.get("gpus", None):
-            self._common_env[SlurmEnv.GPUS.value] = config.get("gpus")
-
-        if config.get("account", None):
-            self._common_env[SlurmEnv.ACCOUNT.value] = config.get("account")
-
-        self._program = [executable] + self._program
+    def executor(self, executor: BaseExecutor):
+        self._executor = executor
 
         return self
 
@@ -202,7 +183,7 @@ class Sweep:
 
     def _check_cols_exist(self, exist_cols, add_missing=False, df=None):
         if df is None:
-            df = self._df
+            df = self._args
 
         exist_cols = set(exist_cols)
         cols = set(df.columns)
