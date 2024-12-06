@@ -1,7 +1,8 @@
-from typing import Iterator, Union, TextIO, List
+from typing import Iterator, Union, TextIO, List, Optional
 import sys
 from contextlib import nullcontext
 from tqdm.auto import tqdm
+import json
 from pathlib import Path
 import polars as pl
 
@@ -144,4 +145,21 @@ class Sweep:
                 print(str(run), file=file)
                 print(f"sleep $(( RANDOM % {delay} ))", file=file, end="\n\n")
 
-        return self
+    def write_json(
+        self,
+        file: Union[str, Path, TextIO] = None,
+        indent: Optional[int] = None,
+        jsonl: bool = False,
+    ):
+        with (
+            open(file, "w")
+            if isinstance(file, (str, Path))
+            else nullcontext(file or sys.stdout) as file
+        ):
+            if jsonl:
+                for run in self:
+                    print(json.dumps(run.todict()), file=file)
+            else:
+                print(
+                    json.dumps([run.todict() for run in self], indent=indent), file=file
+                )

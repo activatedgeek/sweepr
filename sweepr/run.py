@@ -1,6 +1,6 @@
 from typing import Optional, List
 import dataclasses
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict as dataclassasdict
 import uuid
 
 from .types import (
@@ -22,6 +22,9 @@ class Run:
             + self.program
             + [f"--{k}={v}" for k, v in self.args.items()]
         )
+
+    def todict(self):
+        return {k: v for k, v in dataclassasdict(self).items()}
 
     def __str__(self):
         return " ".join(self.argv)
