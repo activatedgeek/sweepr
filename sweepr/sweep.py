@@ -12,6 +12,7 @@ from operator import iand, ior
 
 from .types import Program, Arg, ArgsDict, EnvDict, ArgsMatrix, Includes, Excludes
 from .utils import iter_dict
+from .env import RunEnv
 
 
 @dataclass
@@ -19,11 +20,13 @@ class Run:
     program: List[str]
     args: Optional[ArgsDict] = field(default_factory=lambda: {})
     env: Optional[EnvDict] = field(default_factory=lambda: {})
+    tags: List[str] = field(default_factory=lambda: [])
 
     @property
     def argv(self):
         return (
-            [f"RUN_HASH={self.hash}"]
+            [f"{RunEnv.HASH.value}={self.hash}"]
+            + ([f"{RunEnv.TAGS.value}={','.join(self.tags)}"] if self.tags else [])
             + [f"{k}={v}" for k, v in self.env.items()]
             + self.program
             + [f"--{k}={v}" for k, v in self.args.items()]
@@ -55,18 +58,42 @@ class Sweep:
         if isinstance(program, str):
             program = program.split(" ")
 
-        self._program: list = program
+        self._program = program
 
         self._df: pl.DataFrame = None
 
     def __len__(self):
         return len(self._df)
 
+    @property
+    def tags(self):
+        assert self._df is not None, "Did you set .args(...) first?"
+
+        return list(
+            filter(
+                None,
+                [
+                    f"arg:{k}"
+                    for k, v in next(
+                        self._df.select(
+                            [pl.col(c).n_unique() for c in self._df.columns]
+                        ).iter_rows(named=True)
+                    ).items()
+                    if v > 1
+                ],
+            )
+        )
+
     def __iter__(self) -> Iterator[Run]:
+        assert self._df is not None, "Did you set .args(...) first?"
+
+        run_tags = self.tags
+
         for row in self._df.iter_rows(named=True):
             run = Run(
                 program=self._program,
                 args={k: v for k, v in row.items() if v is not None},
+                tags=run_tags,
             )
 
             yield run
@@ -129,13 +156,12 @@ class Sweep:
             if isinstance(file, (str, Path))
             else nullcontext(file or sys.stdout) as file
         ):
-            print("#!/usr/bin/env -S bash -l", file=file)
+            print("#!/usr/bin/env -S bash -l", file=file, end="\n\n")
             print(file=file)
 
             for run in self:
                 print(str(run), file=file)
-                print(f"sleep $(( RANDOM % {delay} ))", file=file)
-                print(file=file)
+                print(f"sleep $(( RANDOM % {delay} ))", file=file, end="\n\n")
 
         return self
 
