@@ -30,7 +30,7 @@ uv sync --refresh --no-install-project --extra dev
 Then install `sweepr` using
 
 ```shell
-uv pip install -e .[dev]
+uv pip install -U -e .[dev]
 ```
 
 ## License

@@ -150,7 +150,6 @@ class Sweep:
             else nullcontext(file or sys.stdout) as file
         ):
             print("#!/usr/bin/env -S bash -l", file=file, end="\n\n")
-            print(file=file)
 
             for run in self:
                 print(str(run), file=file)
