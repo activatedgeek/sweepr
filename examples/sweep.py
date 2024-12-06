@@ -40,7 +40,7 @@ def main(out=None):
                 ({"dataset": "rng"}, {"batch_size": 16}),
             ]
         )
-        .exclude([])
+        .exclude([{"dataset": "^math500:"}])
         .provider(StatelessProvider())
         # .provider(WandBProvider())
         ## Last one takes effect.
@@ -50,6 +50,8 @@ def main(out=None):
             SlurmExecutor(file="test.py", account="sk", timelimit=12, gpus="a100:1")
         )
     )
+
+    breakpoint()
 
     # sweep.write_json(file=out, indent=2, jsonl=True or False)
     sweep.write_bash(file=out)

@@ -15,19 +15,50 @@ def iter_dict(inputs: ArgsMatrix) -> Iterator[ArgsDict]:
         yield {**consts, **dict(zip(inputs.keys(), values))}
 
 
-def check_df_columns(
-    df: pl.DataFrame, exist_cols: Iterable[str], add_missing: bool = False
-):
+def ensure_df_columns(
+    df: pl.DataFrame, exist_cols: Iterable[str], update: bool = False
+) -> pl.DataFrame:
     exist_cols = set(exist_cols)
     cols = set(df.columns)
 
     missing_cols = exist_cols - cols
     if missing_cols:
-        if add_missing:
+        if update:
             df = df.with_columns(**{k: pl.lit(None) for k in missing_cols})
         else:
             msg = ", ".join([f'"{c}"' for c in missing_cols])
             raise ValueError(f"{len(missing_cols)} column(s) missing: {msg}.")
+
+    return df
+
+
+def ensure_df_compat(*dfs: pl.DataFrame, update: bool = False):
+    schemas = tuple(dict(df.schema) for df in dfs)
+    cols = set([k for s in schemas for k in s.keys()])
+
+    merged_schema = {}
+    for c in cols:
+        dtypes = set(
+            filter(
+                lambda dtype: dtype != pl.datatypes.classes.Null,
+                set(s.get(c, pl.datatypes.classes.Null) for s in schemas),
+            )
+        )
+
+        if len(dtypes) > 1:
+            raise ValueError(f'Incompatible dtypes for column "{c}": {dtypes}')
+
+        merged_schema[c] = list(dtypes)[0]
+
+    if update:
+        return (
+            ensure_df_columns(df, merged_schema.keys(), update=update).cast(
+                merged_schema
+            )
+            for df in dfs
+        )
+
+    return dfs
 
 
 def prepare_df_match_expr(df: pl.DataFrame, match_dict: ArgsMatrix):

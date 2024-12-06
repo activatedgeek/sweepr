@@ -11,7 +11,12 @@ from .types import (
     Includes,
     Excludes,
 )
-from .utils import iter_dict, check_df_columns, prepare_df_match_expr
+from .utils import (
+    iter_dict,
+    ensure_df_columns,
+    ensure_df_compat,
+    prepare_df_match_expr,
+)
 from .executors import BaseExecutor
 from .providers import BaseProvider
 from .run import Run
@@ -71,8 +76,7 @@ class Sweep:
         if self._args is None:
             self._args = new_df
         else:
-            check_df_columns(self._args, new_df.columns, add_missing=True)
-            check_df_columns(new_df, self._args.columns, add_missing=True)
+            self._args, new_df = ensure_df_compat(self._args, new_df, update=True)
 
             self._args = pl.concat([self._args, new_df], how="align", rechunk=True)
 
@@ -87,9 +91,8 @@ class Sweep:
             includes = [includes]
 
         for match_dict, include_dict in tqdm(includes, leave=False):
-            check_df_columns(self._args, match_dict.keys())
-
-            check_df_columns(self._args, include_dict.keys(), add_missing=True)
+            ensure_df_columns(self._args, match_dict.keys())
+            self._args = ensure_df_columns(self._args, include_dict.keys(), update=True)
 
             self._args = self._args.with_columns(
                 pl.when(prepare_df_match_expr(self._args, match_dict))
@@ -109,7 +112,7 @@ class Sweep:
             excludes = [excludes]
 
         for match_dict in tqdm(excludes, leave=False):
-            check_df_columns(self._args, match_dict.keys())
+            ensure_df_columns(self._args, match_dict.keys())
 
             self._args = self._args.filter(
                 ~prepare_df_match_expr(self._args, match_dict)
