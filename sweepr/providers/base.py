@@ -21,7 +21,7 @@ class StatelessProvider(BaseProvider):
         ID = "RUN_ID"
         TAGS = "RUN_TAGS"
 
-    def __call__(self, run: Run, sweep=None) -> Run:
+    def __call__(self, run: Run, *, sweep=None, **_) -> Run:
         if sweep:
             run.env[self.Env.TAGS.value] = ",".join(sweep.tags)
 

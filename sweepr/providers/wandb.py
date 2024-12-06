@@ -47,6 +47,11 @@ class WandBProvider(BaseProvider):
             run.env[wandb.env.SWEEP_ID] = self.sweep_id
 
         if sweep:
+            from ..sweep import Sweep
+
+            if not isinstance(sweep, Sweep):
+                raise ValueError(f"Expected type Sweep. Found {type(sweep).__name__}.")
+
             run.env[wandb.env.TAGS] = ",".join(sweep.tags)
 
         run.env[wandb.env.RESUME] = "allow"

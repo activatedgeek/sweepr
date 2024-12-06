@@ -8,6 +8,8 @@ class BaseExecutor:
     file: str = None
     env: Dict[str, str] = field(default_factory=lambda: {})
 
+    def __post_init__(self): ...
+
     @property
-    def exec(self):
+    def exec(self) -> List[str]:
         return self.executable + [self.file]

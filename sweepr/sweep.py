@@ -65,7 +65,7 @@ class Sweep:
             )
 
             if self._provider:
-                run = self._provider(run, self)
+                run = self._provider(run, sweep=self)
 
             yield run
 
