@@ -12,4 +12,4 @@ __all__ = [
     "StatelessProvider",
 ]
 
-__version__ = "0.1.0a"
+__version__ = "0.1.0a1"
