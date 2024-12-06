@@ -1,6 +1,6 @@
 # Sweepr
 
-[![Python Lint](https://github.com/activatedgeek/sweepr/actions/workflows/lint.yml/badge.svg)](https://github.com/activatedgeek/sweepr/actions/workflows/lint.yml) [![Publish PyPI](https://github.com/activatedgeek/sweepr/actions/workflows/publish.yml/badge.svg?event=release)](https://github.com/activatedgeek/sweepr/actions/workflows/publish.yml)
+[![Python Lint](https://github.com/activatedgeek/sweepr/actions/workflows/lint.yml/badge.svg)](https://github.com/activatedgeek/sweepr/actions/workflows/lint.yml) [![PyPI Publish](https://github.com/activatedgeek/sweepr/actions/workflows/publish.yml/badge.svg?event=release)](https://github.com/activatedgeek/sweepr/actions/workflows/publish.yml) [![PyPI Latest Version](https://img.shields.io/pypi/v/sweepr)](https://pypi.org/project/sweepr)
 
 ## Install
 

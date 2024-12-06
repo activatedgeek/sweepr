@@ -1,8 +1,9 @@
 name: Publish PyPI
 
 on:
-  release:
-    types: [created]
+  push:
+    tags:
+      - "v*.*.*"
 
 jobs:
   publish:
@@ -24,6 +25,12 @@ jobs:
 
       - name: Build
         run: uv build
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/**
 
       - name: Publish
         uses: pypa/gh-action-pypi-publish@release/v1

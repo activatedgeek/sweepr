@@ -1,7 +1,7 @@
 import fire
 
-from sweepr import Sweep, StatelessProvider  # noqa: F401
-from sweepr.providers.wandb import WandBProvider
+from sweepr import Sweep, StatelessProvider
+from sweepr.providers.wandb import WandBProvider  # noqa: F401
 from sweepr.executors.python import PythonExecutor
 from sweepr.executors.pueue import PueueExecutor
 from sweepr.executors.slurm import SlurmExecutor
@@ -41,8 +41,8 @@ def main(out=None):
             ]
         )
         .exclude([])
-        # .provider(StatelessProvider())
-        .provider(WandBProvider())
+        .provider(StatelessProvider())
+        # .provider(WandBProvider())
         ## Last one takes effect.
         .executor(PythonExecutor(file="test.py"))
         .executor(PueueExecutor(file="test.py", gpus=1))
