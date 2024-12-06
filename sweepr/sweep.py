@@ -10,7 +10,7 @@ import polars as pl
 from functools import reduce
 from operator import iand, ior
 
-from .types import Program, ArgsDict, EnvDict, ArgsMatrix, Includes, Excludes
+from .types import Program, Arg, ArgsDict, EnvDict, ArgsMatrix, Includes, Excludes
 from .utils import iter_dict
 
 
@@ -137,6 +137,8 @@ class Sweep:
                 print(f"sleep $(( RANDOM % {delay} ))", file=file)
                 print(file=file)
 
+        return self
+
     def _check_cols_exist(self, exist_cols, add_missing=False, df=None):
         if df is None:
             df = self._df
@@ -153,11 +155,16 @@ class Sweep:
                 raise ValueError(f"{len(missing_cols)} column(s) missing: {msg}.")
 
     def _prepare_match_conditions(self, match_dict: ArgsMatrix):
-        ## TODO: replace with custom match function supporting regex for strings.
+        def _expr(k: str, v: Arg):
+            if isinstance(v, str):
+                ## NOTE: Regex syntax at https://docs.rs/regex/latest/regex/#syntax
+                return pl.col(k).str.contains(v, literal=False)
+            return pl.col(k) == v
+
         return reduce(
             ior,
             [
-                reduce(iand, [pl.col(k) == v for k, v in md.items()])
+                reduce(iand, [_expr(k, v) for k, v in md.items()])
                 for md in iter_dict(match_dict)
             ],
         )
