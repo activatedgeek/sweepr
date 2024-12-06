@@ -58,7 +58,7 @@ def main(out=None):
     )
 
     ## Generate complete commands.
-    # sweep.write_json(file=out, indent=2, jsonl=True or False)
+    # sweep.write_json(file=out, indent=2, jsonl=True)
     sweep.write_bash(file=out)
 
 
