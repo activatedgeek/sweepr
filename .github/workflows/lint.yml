@@ -5,6 +5,8 @@ on:
     paths:
       - .github/workflows/lint.yml
       - '**.py'
+    tags-ignore:
+      - '**'
 
 jobs:
   run-lint:
