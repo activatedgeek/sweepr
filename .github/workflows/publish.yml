@@ -1,9 +1,6 @@
 name: Publish PyPI
 
 on:
-  workflow_dispatch:
-    branches:
-      - main
   release:
     types: [created]
 
