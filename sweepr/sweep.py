@@ -10,9 +10,19 @@ import polars as pl
 from functools import reduce
 from operator import iand, ior
 
-from .types import Program, Arg, ArgsDict, EnvDict, ArgsMatrix, Includes, Excludes
+from .types import (
+    Program,
+    Arg,
+    ArgsDict,
+    EnvDict,
+    PueueConfigDict,
+    SlurmConfigDict,
+    ArgsMatrix,
+    Includes,
+    Excludes,
+)
 from .utils import iter_dict
-from .env import RunEnv
+from .env import RunEnv, PueueEnv, SlurmEnv
 
 
 @dataclass
@@ -62,6 +72,8 @@ class Sweep:
 
         self._df: pl.DataFrame = None
 
+        self._common_env = {}
+
     def __len__(self):
         return len(self._df)
 
@@ -93,6 +105,7 @@ class Sweep:
             run = Run(
                 program=self._program,
                 args={k: v for k, v in row.items() if v is not None},
+                env=self._common_env,
                 tags=run_tags,
             )
 
@@ -147,6 +160,28 @@ class Sweep:
             self._check_cols_exist(match_dict.keys())
 
             self._df = self._df.filter(~self._prepare_match_conditions(match_dict))
+
+        return self
+
+    def pueue(self, config: PueueConfigDict, executable: str = "puv"):
+        if config.get("gpus", None):
+            self._common_env[PueueEnv.GPUS.value] = config.get("gpus")
+
+        self._program = [executable] + self._program
+
+        return self
+
+    def slurm(self, config: SlurmConfigDict, executable: str = "sdocker"):
+        if config.get("timelimit", None):
+            self._common_env[SlurmEnv.TIMELIMIT.value] = config.get("timelimit")
+
+        if config.get("gpus", None):
+            self._common_env[SlurmEnv.GPUS.value] = config.get("gpus")
+
+        if config.get("account", None):
+            self._common_env[SlurmEnv.ACCOUNT.value] = config.get("account")
+
+        self._program = [executable] + self._program
 
         return self
 

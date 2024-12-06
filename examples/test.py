@@ -35,6 +35,7 @@ def main(out=None):
                 ({"dataset": "rng"}, {"batch_size": 16}),
             ]
         )
+        .slurm({"account": "sk", "timelimit": 12, "gpus": "a100:1"})
     ).write_bash(file=out)
 
 
