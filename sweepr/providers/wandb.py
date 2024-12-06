@@ -6,7 +6,6 @@ from enum import Enum
 
 try:
     import wandb
-    import wandb.apis
 except ImportError:
     raise ImportError("Missing wandb. Install using `pip install wandb`.")
 
@@ -37,10 +36,7 @@ class WandBProvider(BaseProvider):
             },
         )
 
-    def runs(self, config_keys: Iterable[str]) -> Iterator[ArgsDict]:
-        yield from self._get_run_configs(filter_keys=config_keys)
-
-    def process(self, run: Run, sweep=None):
+    def __call__(self, run: Run, *, sweep=None, **_) -> Run:
         if self.entity:
             run.env[wandb.env.ENTITY] = self.entity
 
@@ -58,6 +54,9 @@ class WandBProvider(BaseProvider):
         run.env[wandb.env.RUN_ID] = run.id
 
         return run
+
+    def runs(self, config_keys: Iterable[str]) -> Iterator[ArgsDict]:
+        yield from self._get_run_configs(filter_keys=config_keys)
 
     def _get_runs(
         self, filters: dict = None, per_page: int = 1000, **kwargs

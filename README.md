@@ -14,6 +14,10 @@ To use `wandb` provider, run:
 pip install sweepr[wandb]
 ```
 
+## Usage
+
+See [examples/sweep.py](./examples/sweep.py) for a condensed example of all features.
+
 ## Development
 
 We use [`uv`](https://docs.astral.sh/uv/) to manage dependencies.

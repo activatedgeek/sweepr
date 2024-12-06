@@ -10,6 +10,7 @@ from sweepr.executors.slurm import SlurmExecutor
 def main(out=None):
     sweep = (
         Sweep()
+        ## Setup arguments matrix.
         .args(
             {
                 "seed": 137,
@@ -33,6 +34,7 @@ def main(out=None):
                 "evaluator": ["rng", "srng"],
             }
         )
+        ## Include conditional arguments.
         .include(
             [
                 ({"dataset": ["gsm8k", "^math500:"]}, {"evaluator": "math"}),
@@ -40,17 +42,22 @@ def main(out=None):
                 ({"dataset": "rng"}, {"batch_size": 16}),
             ]
         )
+        ## Exclude arguments.
         .exclude([{"dataset": "^math500:"}])
+        ## Setup provider.
         .provider(StatelessProvider())
         # .provider(WandBProvider())
-        ## Last one takes effect.
+        ## Setup executor (last takes effect).
         .executor(PythonExecutor(file="test.py"))
         .executor(PueueExecutor(file="test.py", gpus=1))
         .executor(
             SlurmExecutor(file="test.py", account="sk", timelimit=12, gpus="a100:1")
         )
+        ## Extend executor environment.
+        .env({"LOGLEVEL": "DEBUG"})
     )
 
+    ## Generate complete commands.
     # sweep.write_json(file=out, indent=2, jsonl=True or False)
     sweep.write_bash(file=out)
 

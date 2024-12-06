@@ -7,6 +7,7 @@ from pathlib import Path
 import polars as pl
 
 from .types import (
+    EnvDict,
     ArgsMatrix,
     Includes,
     Excludes,
@@ -64,7 +65,7 @@ class Sweep:
             )
 
             if self._provider:
-                run = self._provider.process(run, self)
+                run = self._provider(run, self)
 
             yield run
 
@@ -132,6 +133,13 @@ class Sweep:
 
     def executor(self, executor: BaseExecutor):
         self._executor = executor
+
+        return self
+
+    def env(self, env_dict: EnvDict):
+        assert self._executor is not None, "Did you set .executor(...) first?"
+
+        self._executor.env = {**self._executor.env, **env_dict}
 
         return self
 
