@@ -92,4 +92,7 @@ class WandBProvider(BaseProvider):
     ) -> Iterator[ArgsDict]:
         filter_keys = set(filter_keys or [])
         for run in tqdm(self._get_runs(**kwargs), leave=False):
-            yield {k: v for k, v in run.config.items() if k in filter_keys}
+            cfg = {k: v for k, v in run.config.items()}
+            if filter_keys:
+                cfg = {k: v for k, v in cfg.items() if k in filter_keys}
+            yield cfg
